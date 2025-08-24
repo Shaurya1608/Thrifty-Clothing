@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: function() {
-      return !this.googleId && !this.facebookId;
+      return !this.googleId && !this.facebookId && !this.firebaseUid;
     },
     minlength: 6
   },
@@ -83,6 +83,11 @@ const userSchema = new mongoose.Schema({
     sparse: true
   },
   facebookId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  firebaseUid: {
     type: String,
     unique: true,
     sparse: true
@@ -114,6 +119,11 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  role: {
+    type: String,
+    enum: ['user', 'seller', 'admin'],
+    default: 'user'
   },
   preferences: {
     notifications: {

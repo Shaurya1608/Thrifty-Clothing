@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { auth } from '../firebase';
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -14,15 +16,27 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const oobCode = searchParams.get('oobCode'); // Firebase uses oobCode instead of token
 
   useEffect(() => {
-    if (!token) {
+    if (!oobCode) {
       setError('Invalid reset link. Please request a new password reset.');
       return;
     }
-    setTokenValid(true);
-  }, [token]);
+    
+    // Verify the reset code is valid
+    const verifyCode = async () => {
+      try {
+        await verifyPasswordResetCode(auth, oobCode);
+        setTokenValid(true);
+      } catch (error) {
+        console.error('Invalid reset code:', error);
+        setError('This password reset link is invalid or has expired. Please request a new one.');
+      }
+    };
+    
+    verifyCode();
+  }, [oobCode]);
 
   const handleChange = (e) => {
     setFormData({
@@ -51,34 +65,30 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token: token,
-          password: formData.password
-        })
+      // Use Firebase's confirmPasswordReset
+      await confirmPasswordReset(auth, oobCode, formData.password);
+      
+      setMessage('Password reset successfully! Redirecting to login...');
+      setFormData({
+        password: '',
+        confirmPassword: ''
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage('Password reset successfully! Redirecting to login...');
-        setFormData({
-          password: '',
-          confirmPassword: ''
-        });
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-      } else {
-        setError(data.message || 'Failed to reset password');
-      }
+      // Redirect to login after 3 seconds
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (error) {
-      setError('Network error. Please try again.');
+      console.error('Password reset error:', error);
+      
+      if (error.code === 'auth/expired-action-code') {
+        setError('This password reset link has expired. Please request a new one.');
+      } else if (error.code === 'auth/invalid-action-code') {
+        setError('Invalid reset link. Please request a new password reset.');
+      } else if (error.code === 'auth/weak-password') {
+        setError('Password is too weak. Please choose a stronger password.');
+      } else {
+        setError('Failed to reset password. Please try again.');
+      }
     }
 
     setLoading(false);

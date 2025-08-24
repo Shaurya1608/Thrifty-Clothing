@@ -10,15 +10,29 @@ const createTransporter = () => {
     return null;
   }
 
-  return nodemailer.createTransport({
+  // For Resend, use their specific configuration
+  const config = {
     host: process.env.SMTP_HOST || 'smtp.resend.com',
     port: process.env.SMTP_PORT || 587,
-    secure: false,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
+    },
+    // Add these settings for better compatibility
+    tls: {
+      rejectUnauthorized: false
     }
+  };
+
+  console.log('📧 Creating email transporter with config:', {
+    host: config.host,
+    port: config.port,
+    user: config.auth.user ? '***configured***' : 'not configured',
+    from: process.env.SMTP_FROM || 'onboarding@resend.dev'
   });
+
+  return nodemailer.createTransport(config);
 };
 
 const transporter = createTransporter();
@@ -36,25 +50,22 @@ const emailTemplates = {
           <h2 style="color: #333;">Hello ${data.name}!</h2>
           <p style="color: #666; line-height: 1.6;">
             Thank you for registering with THRIFTY CLOTHINGS. To complete your registration, 
-            please verify your email address by clicking the button below:
+            please verify your email address by entering the code below:
           </p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.CLIENT_URL}/verify-email?token=${data.token}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                      color: white; padding: 15px 30px; text-decoration: none; 
-                      border-radius: 5px; display: inline-block;">
-              Verify Email
-            </a>
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; display: inline-block;">
+              <h3 style="color: #1f2937; margin: 0 0 10px 0;">Your Verification Code</h3>
+              <div style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 8px; margin: 10px 0;">
+                ${data.otp}
+              </div>
+              <p style="color: #6b7280; margin: 0; font-size: 14px;">This code will expire in 10 minutes</p>
+            </div>
           </div>
           <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, you can copy and paste this link into your browser:
-          </p>
-          <p style="color: #667eea; font-size: 14px; word-break: break-all;">
-            ${process.env.CLIENT_URL}/verify-email?token=${data.token}
+            Enter this code on the verification page to activate your account.
           </p>
           <p style="color: #666; font-size: 14px;">
-            This link will expire in 24 hours. If you didn't create an account, 
-            you can safely ignore this email.
+            If you didn't create this account, please ignore this email.
           </p>
         </div>
         <div style="background: #333; padding: 20px; text-align: center;">

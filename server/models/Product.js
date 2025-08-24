@@ -59,10 +59,19 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  seller: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   images: [{
     url: {
       type: String,
       required: true
+    },
+    public_id: {
+      type: String,
+      required: false // Made optional for backward compatibility
     },
     alt: String,
     isPrimary: {

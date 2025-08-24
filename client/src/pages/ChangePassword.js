@@ -1,21 +1,21 @@
-import React, { useState, useContext } from 'react';
-import AuthContext from '../contexts/AuthContext';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 
 const ChangePassword = () => {
+  const { user } = useFirebaseAuth();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -27,7 +27,7 @@ const ChangePassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
+    setSuccess('');
     setError('');
 
     // Validation
@@ -60,7 +60,7 @@ const ChangePassword = () => {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('Password changed successfully!');
+        setSuccess('Password changed successfully!');
         setFormData({
           currentPassword: '',
           newPassword: '',
@@ -208,9 +208,9 @@ const ChangePassword = () => {
             </div>
           </div>
 
-          {message && (
+          {success && (
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              {message}
+              {success}
             </div>
           )}
 

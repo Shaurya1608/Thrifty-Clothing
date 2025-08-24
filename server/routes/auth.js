@@ -34,16 +34,31 @@ router.post('/register', [
 
     const { name, email, password, phone, gender, dateOfBirth } = req.body;
 
-    // Check if user already exists
+    // Check if user already exists and is fully verified
     let user = await User.findOne({ email });
-    if (user) {
+    if (user && user.isEmailVerified) {
       return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // If user exists but email is not verified, allow re-registration
+    if (user && !user.isEmailVerified) {
+      console.log('🔄 Allowing re-registration for unverified user:', email);
+      // Delete the existing unverified user
+      await User.deleteOne({ email });
+      console.log('✅ Deleted unverified user for re-registration');
     }
 
     if (phone) {
       user = await User.findOne({ phone });
-      if (user) {
+      if (user && user.isEmailVerified) {
         return res.status(400).json({ message: 'User already exists with this phone number' });
+      }
+      
+      // If user exists with phone but email is not verified, allow re-registration
+      if (user && !user.isEmailVerified) {
+        console.log('🔄 Allowing re-registration for unverified user with phone:', phone);
+        await User.deleteOne({ phone });
+        console.log('✅ Deleted unverified user with phone for re-registration');
       }
     }
 
@@ -68,24 +83,11 @@ router.post('/register', [
       // Send verification email with OTP
       await sendEmail({
         to: email,
-        subject: 'Verify your email - THRIFTY CLOTHINGS',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #2563eb;">Welcome to THRIFTY CLOTHINGS!</h2>
-            <p>Hi ${name},</p>
-            <p>Thank you for registering with us. To complete your registration, please verify your email address.</p>
-            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <h3 style="color: #1f2937; margin: 0;">Your Verification Code</h3>
-              <div style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 8px; margin: 10px 0;">
-                ${otp}
-              </div>
-              <p style="color: #6b7280; margin: 0;">This code will expire in 10 minutes</p>
-            </div>
-            <p>Enter this code on the verification page to activate your account.</p>
-            <p>If you didn't create this account, please ignore this email.</p>
-            <p>Best regards,<br>The THRIFTY CLOTHINGS Team</p>
-          </div>
-        `
+        template: 'email-verification',
+        data: {
+          name: name,
+          otp: otp
+        }
       });
 
       // Create user profile
@@ -188,6 +190,7 @@ router.post('/login', [
         name: user.name,
         email: user.email,
         phone: user.phone,
+        role: user.role,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified
       }
@@ -316,24 +319,11 @@ router.post('/resend-otp', [
     // Send email with OTP
     await sendEmail({
       to: email,
-      subject: 'Verify your email - THRIFTY CLOTHINGS',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2563eb;">Welcome to THRIFTY CLOTHINGS!</h2>
-          <p>Hi ${user.name},</p>
-          <p>Thank you for registering with us. To complete your registration, please verify your email address.</p>
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-            <h3 style="color: #1f2937; margin: 0;">Your Verification Code</h3>
-            <div style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 8px; margin: 10px 0;">
-              ${otp}
-            </div>
-            <p style="color: #6b7280; margin: 0;">This code will expire in 10 minutes</p>
-          </div>
-          <p>Enter this code on the verification page to activate your account.</p>
-          <p>If you didn't create this account, please ignore this email.</p>
-          <p>Best regards,<br>The THRIFTY CLOTHINGS Team</p>
-        </div>
-      `
+      template: 'email-verification',
+      data: {
+        name: user.name,
+        otp: otp
+      }
     });
 
     res.json({ message: 'OTP sent successfully' });
@@ -480,8 +470,9 @@ router.get('/me', auth, async (req, res) => {
 
 // @route   POST /api/auth/logout
 // @desc    Logout user
-// @access  Private
-router.post('/logout', auth, (req, res) => {
+// @access  Public (no auth required for logout)
+router.post('/logout', (req, res) => {
+  // Just return success - actual logout is handled on frontend
   res.json({ message: 'Logged out successfully' });
 });
 

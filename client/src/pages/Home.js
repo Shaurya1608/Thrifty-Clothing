@@ -1,48 +1,20 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import HeroCarousel from '../components/HeroCarousel';
+import CategoryGrid from '../components/CategoryGrid';
+import ProductShowcase from '../components/ProductShowcase';
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white py-20 lg:py-32">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}></div>
-        </div>
-        
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <div className="animate-fade-in-up">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 text-shadow">
-              Welcome to{' '}
-              <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                THRIFTY
-              </span>
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
-              Discover affordable fashion that doesn't compromise on style. 
-              Quality clothing for everyone, every budget.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link to="/products" className="btn-primary text-lg px-8 py-4 bg-white text-blue-600 hover:bg-gray-100">
-                🛍️ Shop Now
-              </Link>
-              <Link to="/about" className="btn-secondary text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-blue-600">
-                Learn More
-              </Link>
-            </div>
-          </div>
-        </div>
-        
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-white rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Carousel Section */}
+      <HeroCarousel />
+      
+      {/* Category Grid Section */}
+      <CategoryGrid />
+      
+      {/* Product Showcase Section */}
+      <ProductShowcase />
 
       {/* Features Section */}
       <section className="py-20 lg:py-32">

@@ -75,6 +75,20 @@ router.put('/profile', auth, [
   }
 });
 
+// Get addresses
+router.get('/addresses', auth, async (req, res) => {
+  try {
+    const profile = await UserProfile.findOne({ userId: req.user.id });
+    if (!profile) {
+      return res.json([]);
+    }
+    res.json(profile.addresses || []);
+  } catch (error) {
+    console.error('Get addresses error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Add address
 router.post('/addresses', auth, [
   body('type').isIn(['home', 'work', 'other']),
@@ -176,6 +190,20 @@ router.delete('/addresses/:addressId', auth, async (req, res) => {
   }
 });
 
+// Get wishlist
+router.get('/wishlist', auth, async (req, res) => {
+  try {
+    const profile = await UserProfile.findOne({ userId: req.user.id });
+    if (!profile) {
+      return res.json([]);
+    }
+    res.json(profile.wishlist || []);
+  } catch (error) {
+    console.error('Get wishlist error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Add to wishlist
 router.post('/wishlist', auth, [
   body('productId').isMongoId()
@@ -237,6 +265,20 @@ router.delete('/wishlist/:productId', auth, async (req, res) => {
     res.json({ message: 'Product removed from wishlist' });
   } catch (error) {
     console.error('Remove from wishlist error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get cart
+router.get('/cart', auth, async (req, res) => {
+  try {
+    const profile = await UserProfile.findOne({ userId: req.user.id });
+    if (!profile) {
+      return res.json([]);
+    }
+    res.json(profile.cart || []);
+  } catch (error) {
+    console.error('Get cart error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -343,25 +385,52 @@ router.delete('/cart/:productId', auth, async (req, res) => {
   }
 });
 
+// Track user login
+router.post('/track-login', auth, async (req, res) => {
+  try {
+    let profile = await UserProfile.findOne({ userId: req.user.id });
+    
+    if (!profile) {
+      profile = new UserProfile({ userId: req.user.id });
+    }
+
+    // Update login count and last login time
+    profile.loginCount = (profile.loginCount || 0) + 1;
+    profile.lastLogin = new Date();
+    
+    await profile.save();
+    
+    res.json({ message: 'Login tracked successfully' });
+  } catch (error) {
+    console.error('Track login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get user statistics
 router.get('/stats', auth, async (req, res) => {
   try {
     const profile = await UserProfile.findOne({ userId: req.user.id });
+    const user = await User.findById(req.user.id);
+    
     if (!profile) {
       return res.json({
+        loginCount: 0,
+        lastLogin: null,
+        createdAt: user?.createdAt || null,
         totalOrders: 0,
         wishlistCount: 0,
-        cartCount: 0,
-        loginCount: 0
+        cartCount: 0
       });
     }
 
     res.json({
-      totalOrders: profile.orders.length,
-      wishlistCount: profile.wishlist.length,
-      cartCount: profile.cart.length,
-      loginCount: profile.loginCount,
-      referralCode: profile.referralCode
+      loginCount: profile.loginCount || 0,
+      lastLogin: profile.lastLogin || null,
+      createdAt: user?.createdAt || null,
+      totalOrders: profile.orders?.length || 0,
+      wishlistCount: profile.wishlist?.length || 0,
+      cartCount: profile.cart?.length || 0
     });
   } catch (error) {
     console.error('Get stats error:', error);
